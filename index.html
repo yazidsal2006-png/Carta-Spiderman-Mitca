@@ -68,7 +68,7 @@
       align-items: center;
       gap: 30px;
       padding: 20px;
-      max-width: 440px; /* Borde visible alrededor de las cartas */
+      max-width: 440px;
       width: 90%;
     }
 
@@ -92,16 +92,16 @@
       }
       60% {
         opacity: 1;
-        transform: translate3d(40px, 20px, 0) scale(0.35) rotate(30deg); /* Choca contra el centro/pared */
+        transform: translate3d(40px, 20px, 0) scale(0.35) rotate(30deg);
       }
       75% {
-        transform: translate3d(-15px, -10px, 0) scale(0.32) rotate(-10deg); /* Rebote suave */
+        transform: translate3d(-15px, -10px, 0) scale(0.32) rotate(-10deg);
       }
       90% {
         transform: translate3d(5px, 5px, 0) scale(0.35) rotate(5deg);
       }
       100% {
-        transform: translate3d(0, 0, 0) scale(0.35) rotate(0deg); /* Se queda en el centro */
+        transform: translate3d(0, 0, 0) scale(0.35) rotate(0deg);
       }
     }
 
@@ -115,7 +115,7 @@
       justify-content: center;
       align-items: center;
       position: relative;
-      background: #e1d3be; /* Color base por si tarda la imagen */
+      background: #e1d3be;
       border-radius: 50%;
     }
 
@@ -169,7 +169,6 @@
     .fold-stage-6 { transform: scale(0.94) rotate(-1deg) rotateX(3deg); border-radius: 4%; }
     .fold-stage-6 img { opacity: 0.98; }
 
-    /* Carta totalmente desdoblada */
     .fold-stage-7 {
       transform: scale(1) rotate(0deg) rotateX(0deg) !important;
       filter: blur(0) brightness(1);
@@ -205,9 +204,78 @@
   </main>
 
   <script>
-    // --- Sonido crujiente de papel ---
+    // --- Configuración de Audio (Sintetizador Web Audio API) ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStarted = false;
 
+    // Función para activar el audio de fondo al primer toque
+    function initAudio() {
+      if (!audioStarted) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        startRainSound();
+        audioStarted = true;
+      }
+    }
+
+    // --- Sonido de Lluvia Ambiental Continuo ---
+    function startRainSound() {
+      const bufferSize = audioCtx.sampleRate * 2;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = buffer;
+      whiteNoise.loop = true;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime); // Volumen suave de ambiente
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      whiteNoise.start();
+    }
+
+    // --- Sonido Sintético de Trueno Distante ---
+    function playThunderSound() {
+      if (!audioStarted) return;
+
+      const bufferSize = audioCtx.sampleRate * 1.5;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(150, audioCtx.currentTime); // Frecuencia grave para retumbo de trueno
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.4);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      noise.start();
+    }
+
+    // --- Sonido Crujiente al Desdoblar Papel ---
     function playPaperSound() {
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
@@ -241,7 +309,7 @@
 
     // --- Lógica de Desdoblamiento ---
     function unfold(element) {
-      // Quitar la animación de rebote inicial al tocar
+      initAudio(); // Inicia la música de lluvia ambiental en el primer clic
       element.classList.remove('bounce-in');
 
       let currentStage = 0;
@@ -259,7 +327,7 @@
       }
     }
 
-    // --- Lluvia ---
+    // --- Lluvia Visal ---
     function createRain() {
       const container = document.getElementById('rain-container');
       const dropCount = 85;
@@ -275,12 +343,13 @@
       }
     }
 
-    // --- Relámpagos Aleatorios ---
+    // --- Relámpagos Visuales y Sonido de Trueno Sincronizados ---
     function triggerLightning() {
       const lightning = document.getElementById('lightning');
       
       function flash() {
         lightning.style.opacity = '0.85';
+        playThunderSound(); // Trueno grave sincronizado con el destello
         setTimeout(() => { lightning.style.opacity = '0'; }, 60);
 
         if (Math.random() > 0.5) {
@@ -290,7 +359,7 @@
           }, 90);
         }
 
-        const nextFlash = Math.random() * 6000 + 2500; // Relámpagos cada 2.5 a 8.5 segundos
+        const nextFlash = Math.random() * 6000 + 3500;
         setTimeout(flash, nextFlash);
       }
 
@@ -301,7 +370,10 @@
       createRain();
       triggerLightning();
     };
+
+    // Activar audio si el usuario interactúa en cualquier parte de la pantalla
+    document.addEventListener('click', initAudio, { once: true });
+    document.addEventListener('touchstart', initAudio, { once: true });
   </script>
 </body>
 </html>
-
