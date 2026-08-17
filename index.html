@@ -1,0 +1,219 @@
+# Carta-Spiderman-Mitca
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carta de Yazid Parker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #000000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* --- Efecto de Lluvia y Relámpagos --- */
+    #lightning {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(255, 255, 255, 0.85);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1;
+      transition: opacity 0.05s ease;
+    }
+
+    #rain-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .drop {
+      position: absolute;
+      background: linear-gradient(transparent, rgba(255, 255, 255, 0.5));
+      width: 1px;
+      height: 60px;
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-100px); }
+      100% { transform: translateY(100vh); }
+    }
+
+    /* --- Contenedor Principal de las Cartas --- */
+    .viewport {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      padding: 40px 15px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .paper-container {
+      perspective: 1000px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .paper {
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.4s ease-out;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .paper img {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+      transition: opacity 0.3s ease;
+    }
+
+    /* --- Estados de Desdoblamiento (0 a 7 Clics) --- */
+    .fold-stage-0 {
+      transform: scale(0.18) rotate(-25deg) rotateX(70deg) rotateY(50deg);
+      filter: blur(4px) brightness(0.4);
+      border-radius: 50%;
+    }
+    .fold-stage-0 img { opacity: 0.1; }
+
+    .fold-stage-1 { transform: scale(0.3) rotate(15deg) rotateX(55deg); filter: blur(3px) brightness(0.55); }
+    .fold-stage-1 img { opacity: 0.25; }
+
+    .fold-stage-2 { transform: scale(0.42) rotate(-10deg) rotateX(40deg); filter: blur(2px) brightness(0.7); }
+    .fold-stage-2 img { opacity: 0.4; }
+
+    .fold-stage-3 { transform: scale(0.55) rotate(6deg) rotateX(28deg); filter: blur(1px) brightness(0.8); }
+    .fold-stage-3 img { opacity: 0.6; }
+
+    .fold-stage-4 { transform: scale(0.68) rotate(-4deg) rotateX(18deg); filter: blur(0.5px) brightness(0.9); }
+    .fold-stage-4 img { opacity: 0.75; }
+
+    .fold-stage-5 { transform: scale(0.80) rotate(2deg) rotateX(10deg); filter: blur(0px); }
+    .fold-stage-5 img { opacity: 0.88; }
+
+    .fold-stage-6 { transform: scale(0.92) rotate(-1deg) rotateX(4deg); }
+    .fold-stage-6 img { opacity: 0.95; }
+
+    .fold-stage-7 {
+      transform: scale(1) rotate(0deg) rotateX(0deg);
+      filter: blur(0);
+    }
+    .fold-stage-7 img { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Capas atmosféricas -->
+  <div id="lightning"></div>
+  <div id="rain-container"></div>
+
+  <!-- Contenedor con las dos imágenes -->
+  <main class="viewport">
+    
+    <!-- Carta 1 (Primera imagen enviada) -->
+    <div class="paper-container">
+      <div class="paper fold-stage-0" onclick="unfold(this)">
+        <img src="carta1.jpg" alt="Carta Parte 1">
+      </div>
+    </div>
+
+    <!-- Carta 2 (Segunda imagen enviada) -->
+    <div class="paper-container">
+      <div class="paper fold-stage-0" onclick="unfold(this)">
+        <img src="carta2.jpg" alt="Carta Parte 2">
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // --- Lógica de 7 Clics para Desdoblar ---
+    function unfold(element) {
+      let currentStage = 0;
+      for (let i = 0; i <= 7; i++) {
+        if (element.classList.contains(`fold-stage-${i}`)) {
+          currentStage = i;
+          break;
+        }
+      }
+
+      if (currentStage < 7) {
+        element.classList.remove(`fold-stage-${currentStage}`);
+        element.classList.add(`fold-stage-${currentStage + 1}`);
+      }
+    }
+
+    // --- Efecto de Lluvia ---
+    function createRain() {
+      const container = document.getElementById('rain-container');
+      const dropCount = 90;
+
+      for (let i = 0; i < dropCount; i++) {
+        const drop = document.createElement('div');
+        drop.classList.add('drop');
+        drop.style.left = `${Math.random() * 100}vw`;
+        drop.style.animationDuration = `${0.4 + Math.random() * 0.4}s`;
+        drop.style.animationDelay = `${Math.random() * 2}s`;
+        drop.style.opacity = Math.random();
+        container.appendChild(drop);
+      }
+    }
+
+    // --- Efecto de Relámpagos Aleatorios ---
+    function triggerLightning() {
+      const lightning = document.getElementById('lightning');
+      
+      function flash() {
+        lightning.style.opacity = '0.9';
+        setTimeout(() => { lightning.style.opacity = '0'; }, 70);
+
+        if (Math.random() > 0.5) {
+          setTimeout(() => {
+            lightning.style.opacity = '0.6';
+            setTimeout(() => { lightning.style.opacity = '0'; }, 40);
+          }, 100);
+        }
+
+        const nextFlash = Math.random() * 5000 + 3000;
+        setTimeout(flash, nextFlash);
+      }
+
+      flash();
+    }
+
+    // Inicializar al cargar
+    window.onload = () => {
+      createRain();
+      triggerLightning();
+    };
+  </script>
+</body>
+</html>
