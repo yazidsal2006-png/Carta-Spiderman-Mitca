@@ -1,1 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartas de Yazid Parker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #000000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* --- Fondo: Relámpagos y Lluvia --- */
+    #lightning {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(255, 255, 255, 0.85);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1;
+      transition: opacity 0.05s ease;
+    }
+
+    #rain-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .drop {
+      position: absolute;
+      background: linear-gradient(transparent, rgba(255, 255, 255, 0.6));
+      width: 1px;
+      height: 60px;
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-100px); }
+      100% { transform: translateY(100vh); }
+    }
+
+    /* --- Contenedor Principal (Con margenes para ver lluvia alrededor) --- */
+    .viewport {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+      padding: 20px;
+      max-width: 440px; /* Borde visible alrededor de las cartas */
+      width: 90%;
+    }
+
+    .paper-container {
+      perspective: 1000px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* --- Animación de Caída y Rebote de la Bola --- */
+    .bounce-in {
+      animation: bounceWall 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+    }
+
+    @keyframes bounceWall {
+      0% {
+        opacity: 0;
+        transform: translate3d(-300px, -200px, 0) scale(0.2) rotate(-180deg);
+      }
+      60% {
+        opacity: 1;
+        transform: translate3d(40px, 20px, 0) scale(0.35) rotate(30deg); /* Choca contra el centro/pared */
+      }
+      75% {
+        transform: translate3d(-15px, -10px, 0) scale(0.32) rotate(-10deg); /* Rebote suave */
+      }
+      90% {
+        transform: translate3d(5px, 5px, 0) scale(0.35) rotate(5deg);
+      }
+      100% {
+        transform: translate3d(0, 0, 0) scale(0.35) rotate(0deg); /* Se queda en el centro */
+      }
+    }
+
+    /* --- Estilos del Papel --- */
+    .paper {
+      width: 100%;
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease, border-radius 0.4s ease;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: #e1d3be; /* Color base por si tarda la imagen */
+      border-radius: 50%;
+    }
+
+    .paper img {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+      transition: opacity 0.3s ease;
+      display: block;
+    }
+
+    /* Indicador visual de toques */
+    .paper::after {
+      content: 'Toca para desdoblar';
+      position: absolute;
+      bottom: -22px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px #000;
+      white-space: nowrap;
+    }
+    .fold-stage-7::after {
+      display: none;
+    }
+
+    /* --- ETAPAS DE DESDOBLAMIENTO (0 a 7 Clics) --- */
+    .fold-stage-0 {
+      filter: brightness(0.85);
+      border-radius: 45%;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 15px rgba(255,255,255,0.2);
+    }
+    .fold-stage-0 img { opacity: 0.7; }
+
+    .fold-stage-1 { transform: scale(0.45) rotate(15deg) rotateX(50deg); filter: brightness(0.88); border-radius: 35%; }
+    .fold-stage-1 img { opacity: 0.8; }
+
+    .fold-stage-2 { transform: scale(0.55) rotate(-10deg) rotateX(38deg); filter: brightness(0.9); border-radius: 25%; }
+    .fold-stage-2 img { opacity: 0.85; }
+
+    .fold-stage-3 { transform: scale(0.65) rotate(6deg) rotateX(26deg); filter: brightness(0.93); border-radius: 18%; }
+    .fold-stage-3 img { opacity: 0.9; }
+
+    .fold-stage-4 { transform: scale(0.75) rotate(-4deg) rotateX(16deg); filter: brightness(0.96); border-radius: 12%; }
+    .fold-stage-4 img { opacity: 0.93; }
+
+    .fold-stage-5 { transform: scale(0.85) rotate(2deg) rotateX(8deg); filter: brightness(0.98); border-radius: 8%; }
+    .fold-stage-5 img { opacity: 0.96; }
+
+    .fold-stage-6 { transform: scale(0.94) rotate(-1deg) rotateX(3deg); border-radius: 4%; }
+    .fold-stage-6 img { opacity: 0.98; }
+
+    /* Carta totalmente desdoblada */
+    .fold-stage-7 {
+      transform: scale(1) rotate(0deg) rotateX(0deg) !important;
+      filter: blur(0) brightness(1);
+      border-radius: 4px;
+      background: transparent;
+    }
+    .fold-stage-7 img { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Capas de Lluvia y Relámpagos -->
+  <div id="lightning"></div>
+  <div id="rain-container"></div>
+
+  <!-- Cartas con margen para dejar ver el fondo -->
+  <main class="viewport">
+    
+    <!-- Carta 1 -->
+    <div class="paper-container">
+      <div class="paper fold-stage-0 bounce-in" onclick="unfold(this)">
+        <img src="carta_1.jpg" alt="Carta Parte 1">
+      </div>
+    </div>
+
+    <!-- Carta 2 -->
+    <div class="paper-container">
+      <div class="paper fold-stage-0 bounce-in" style="animation-delay: 0.3s;" onclick="unfold(this)">
+        <img src="carta_2.jpg" alt="Carta Parte 2">
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // --- Sonido crujiente de papel ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playPaperSound() {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const bufferSize = audioCtx.sampleRate * 0.12;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1000 + Math.random() * 600, audioCtx.currentTime);
+      filter.Q.setValueAtTime(1.2, audioCtx.currentTime);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.11);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      whiteNoise.start();
+    }
+
+    // --- Lógica de Desdoblamiento ---
+    function unfold(element) {
+      // Quitar la animación de rebote inicial al tocar
+      element.classList.remove('bounce-in');
+
+      let currentStage = 0;
+      for (let i = 0; i <= 7; i++) {
+        if (element.classList.contains(`fold-stage-${i}`)) {
+          currentStage = i;
+          break;
+        }
+      }
+
+      if (currentStage < 7) {
+        playPaperSound();
+        element.classList.remove(`fold-stage-${currentStage}`);
+        element.classList.add(`fold-stage-${currentStage + 1}`);
+      }
+    }
+
+    // --- Lluvia ---
+    function createRain() {
+      const container = document.getElementById('rain-container');
+      const dropCount = 85;
+
+      for (let i = 0; i < dropCount; i++) {
+        const drop = document.createElement('div');
+        drop.classList.add('drop');
+        drop.style.left = `${Math.random() * 100}vw`;
+        drop.style.animationDuration = `${0.4 + Math.random() * 0.4}s`;
+        drop.style.animationDelay = `${Math.random() * 2}s`;
+        drop.style.opacity = Math.random();
+        container.appendChild(drop);
+      }
+    }
+
+    // --- Relámpagos Aleatorios ---
+    function triggerLightning() {
+      const lightning = document.getElementById('lightning');
+      
+      function flash() {
+        lightning.style.opacity = '0.85';
+        setTimeout(() => { lightning.style.opacity = '0'; }, 60);
+
+        if (Math.random() > 0.5) {
+          setTimeout(() => {
+            lightning.style.opacity = '0.5';
+            setTimeout(() => { lightning.style.opacity = '0'; }, 40);
+          }, 90);
+        }
+
+        const nextFlash = Math.random() * 6000 + 2500; // Relámpagos cada 2.5 a 8.5 segundos
+        setTimeout(flash, nextFlash);
+      }
+
+      flash();
+    }
+
+    window.onload = () => {
+      createRain();
+      triggerLightning();
+    };
+  </script>
+</body>
+</html>
 
